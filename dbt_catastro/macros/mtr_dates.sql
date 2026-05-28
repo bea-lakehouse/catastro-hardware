@@ -104,3 +104,11 @@ case
     else true
 end
 {%- endmacro %}
+
+{% macro mtr_operational_horizon_date() -%}
+(current_date + {{ var('mtr_operational_horizon_days', 7) }})::date
+{%- endmacro %}
+
+{% macro mtr_operational_month_start() -%}
+date_trunc('month', {{ mtr_operational_horizon_date() }})::date
+{%- endmacro %}

@@ -4,7 +4,7 @@ with calendario as (
     select
         generate_series(
             date '2024-01-01',
-            date_trunc('month', current_date)::date,
+            {{ mtr_operational_month_start() }},
             interval '1 month'
         )::date as mes
 ),
@@ -57,7 +57,7 @@ movimientos_detalle as (
         count(*) filter (where coalesce(es_salida_devolucion, false)) as salidas_hardware
     from {{ ref('fct_movimientos_detalle') }}
     where fecha_movimiento::date >= date '2024-01-01'
-      and fecha_movimiento::date <= current_date
+      and fecha_movimiento::date <= {{ mtr_operational_horizon_date() }}
     group by 1
 ),
 
@@ -68,7 +68,7 @@ movimientos_persona as (
         count(*) filter (where coalesce(es_cambio_equipo_real, false)) as cambios_equipo_real
     from {{ ref('int_mtr_eventos_dedup_stats') }}
     where fecha_evento_dia::date >= date '2024-01-01'
-      and fecha_evento_dia::date <= current_date
+      and fecha_evento_dia::date <= {{ mtr_operational_horizon_date() }}
     group by 1
 ),
 

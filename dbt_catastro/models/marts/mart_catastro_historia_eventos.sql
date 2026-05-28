@@ -4,7 +4,7 @@ with eventos as (
     select *
     from {{ ref('int_mtr_eventos_dedup_stats') }}
     where fecha_evento_dia >= date '2024-01-01'
-      and fecha_evento_dia <= current_date
+      and fecha_evento_dia <= {{ mtr_operational_horizon_date() }}
 ),
 
 dim_asignados as (

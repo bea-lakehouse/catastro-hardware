@@ -96,6 +96,6 @@ select
     _loaded_at
 from parsed
 where fecha_evento is not null
-  -- El corte operativo de Catastro es "as of today": filas futuras del sheet
-  -- pueden existir como planificación, pero no deben contaminar KPIs actuales.
-  and fecha_evento::date <= current_date
+  -- El corte operativo acepta una ventana corta hacia adelante para empezar
+  -- a abrir el siguiente mes cuando ya existen ingresos MTR válidos.
+  and fecha_evento::date <= {{ mtr_operational_horizon_date() }}

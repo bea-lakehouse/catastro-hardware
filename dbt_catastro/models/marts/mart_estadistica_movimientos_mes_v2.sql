@@ -4,7 +4,7 @@ with calendario as (
     select
         generate_series(
             date '2024-01-01',
-            date_trunc('month', current_date)::date,
+            {{ mtr_operational_month_start() }},
             interval '1 month'
         )::date as mes
 ),
@@ -15,7 +15,7 @@ original_mtr_ingresos as (
         count(*)::int as ingresos_mtr_original
     from {{ ref('stg_mtr_google_sheet_ingresos') }}
     where fecha_evento::date >= date '2024-01-01'
-      and fecha_evento::date <= current_date
+      and fecha_evento::date <= {{ mtr_operational_horizon_date() }}
     group by 1
 ),
 
@@ -25,7 +25,7 @@ original_mtr_salidas as (
         count(*)::int as salidas_mtr_original
     from {{ ref('stg_mtr_google_sheet_salidas') }}
     where fecha_evento::date >= date '2024-01-01'
-      and fecha_evento::date <= current_date
+      and fecha_evento::date <= {{ mtr_operational_horizon_date() }}
     group by 1
 ),
 
@@ -33,7 +33,7 @@ eventos as (
     select *
     from {{ ref('int_mtr_eventos_dedup_stats') }}
     where fecha_evento_dia::date >= date '2024-01-01'
-      and fecha_evento_dia::date <= current_date
+      and fecha_evento_dia::date <= {{ mtr_operational_horizon_date() }}
 ),
 
 mensual as (
@@ -180,11 +180,11 @@ base as (
     select
         c.mes,
         case
-            when c.mes = date_trunc('month', current_date)::date then 'en_curso'
+            when c.mes = {{ mtr_operational_month_start() }} then 'en_curso'
             else 'cerrado'
         end as estado_mes,
         case
-            when c.mes = date_trunc('month', current_date)::date then coalesce(m.fecha_ultima_actualizacion, current_date)
+            when c.mes = {{ mtr_operational_month_start() }} then coalesce(m.fecha_ultima_actualizacion, {{ mtr_operational_horizon_date() }})
             else coalesce(m.fecha_ultima_actualizacion, (c.mes + interval '1 month - 1 day')::date)
         end as fecha_ultima_actualizacion,
         m.fecha_ultima_actualizacion as fecha_ultimo_evento_mtr,
@@ -226,7 +226,7 @@ base as (
         coalesce(ov.presion_compra_override, h.presion_compra, coalesce(m.ingresos_presion_compra, 0)) as presion_compra,
         coalesce(h.stock_activo_hist, h.stock_activo_actual_ref, sa.stock_activo_actual, 0) as stock_activo,
         case
-            when c.mes = date_trunc('month', current_date)::date
+            when c.mes = {{ mtr_operational_month_start() }}
                 then coalesce(ov.stock_disponible_override, h.stock_disponible_actual_ref, d.stock_disponible_actual, 0)
             else coalesce(ov.stock_disponible_override, h.stock_disponible_hist, h.stock_disponible_actual_ref, d.stock_disponible_actual, 0)
         end as stock_disponible,

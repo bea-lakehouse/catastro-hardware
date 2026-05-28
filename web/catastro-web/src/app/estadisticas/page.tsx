@@ -276,15 +276,26 @@ export default async function EstadisticasPage() {
   const data = await fetchJson<{ items?: MovimientoMes[] }>("/estadisticas/movimientos-mes-historico-v2?limit=15", { items: [] });
   const rows: MovimientoMes[] = data.items || [];
   const ultimo = rows[rows.length - 1] || null;
+  const ultimoMesCerrado =
+    [...rows].reverse().find((row) => row.estado_mes === "cerrado") || null;
   const distributionDateFrom = ultimo?.mes || currentMonthStart;
   const distributionDateTo =
     ultimo?.estado_mes === "en_curso"
       ? (ultimo.acumulado_hasta || ultimo.fecha_ultima_actualizacion || currentMonthEnd)
       : getMonthEndIso(distributionDateFrom);
+  const clientesDateFrom = ultimoMesCerrado?.mes || distributionDateFrom;
+  const clientesDateTo =
+    ultimoMesCerrado?.estado_mes === "cerrado"
+      ? getMonthEndIso(clientesDateFrom)
+      : distributionDateTo;
+  const clientesSourceLabel =
+    ultimoMesCerrado?.estado_mes === "cerrado"
+      ? "último mes cerrado"
+      : "período visible";
 
   const [pct, rot, resumenMensual] = await Promise.all([
     fetchJson<{ clientes_ingresos?: ClientePct[]; clientes_salidas?: ClientePct[]; periodo_clientes?: PeriodoClientes }>(
-      `/estadisticas/estadisticas-porcentajes?date_from=${distributionDateFrom}&date_to=${distributionDateTo}`,
+      `/estadisticas/estadisticas-porcentajes?date_from=${clientesDateFrom}&date_to=${clientesDateTo}`,
       { clientes_ingresos: [], clientes_salidas: [], periodo_clientes: undefined }
     ),
     fetchJson<{ resumen?: RotacionResumen[]; top?: RotacionSku[] }>("/estadisticas/rotacion-sku?limit=15", { resumen: [], top: [] }),
@@ -645,7 +656,7 @@ export default async function EstadisticasPage() {
               <div className="catastro-panel rounded-3xl p-6">
                 <h2 className="text-2xl font-semibold text-[var(--cat-text)]">Top clientes ingresos</h2>
                 <p className="mt-2 text-sm text-[var(--cat-text-muted)]">
-                  Participación sobre ingresos del período {periodoClientes || "visible"}.
+                  Participación sobre ingresos del {clientesSourceLabel} {periodoClientes ? `(${periodoClientes})` : ""}.
                 </p>
                 <div className="catastro-table-shell mt-5 overflow-hidden rounded-2xl">
                   <div className="overflow-x-auto">
@@ -680,7 +691,7 @@ export default async function EstadisticasPage() {
               <div className="catastro-panel rounded-3xl p-6">
                 <h2 className="text-2xl font-semibold text-[var(--cat-text)]">Top clientes salidas</h2>
                 <p className="mt-2 text-sm text-[var(--cat-text-muted)]">
-                  Participación sobre salidas del período {periodoClientes || "visible"}.
+                  Participación sobre salidas del {clientesSourceLabel} {periodoClientes ? `(${periodoClientes})` : ""}.
                 </p>
                 <div className="catastro-table-shell mt-5 overflow-hidden rounded-2xl">
                   <div className="overflow-x-auto">

@@ -70,4 +70,4 @@ select
 from parsed
 where id_equipo is not null
   and fecha_evento is not null
-  and fecha_evento <= current_date
+  and fecha_evento <= {{ mtr_operational_horizon_date() }}

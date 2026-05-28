@@ -1429,7 +1429,7 @@ function ExecutiveReadingSection({
               Estado del corte
             </div>
             <div className="mt-3 text-2xl font-semibold text-emerald-100">
-              Mayo sigue en monitoreo, sin compra activada por presión MTR.
+              {selectedMonthLabel} sigue en monitoreo, sin compra activada por presión MTR.
             </div>
             <div className="mt-3 text-sm leading-6 text-emerald-100/72">
               {reading.visible_al_dia

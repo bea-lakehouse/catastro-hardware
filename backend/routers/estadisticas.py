@@ -1,7 +1,8 @@
 import logging
+import os
 import re
 from typing import Any
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from math import ceil
 from typing import Literal
 from zoneinfo import ZoneInfo
@@ -37,6 +38,7 @@ MTR_EXECUTIVE_SOURCE = (
 
 SANTIAGO_TZ = ZoneInfo("America/Santiago")
 MTR_STOCK_OVERRIDE_BY_MONTH: dict[date, dict[str, Any]] = {}
+MTR_OPERATIONAL_HORIZON_DAYS = int(os.getenv("MTR_OPERATIONAL_HORIZON_DAYS", "7"))
 
 
 def _today_santiago() -> date:
@@ -48,10 +50,24 @@ def _month_start(value: date | None = None) -> date:
     return base.replace(day=1)
 
 
+def _operational_today_santiago() -> date:
+    return _today_santiago() + timedelta(days=MTR_OPERATIONAL_HORIZON_DAYS)
+
+
+def _operational_month_start() -> date:
+    return _month_start(_operational_today_santiago())
+
+
+def _next_month_start(value: date) -> date:
+    if value.month == 12:
+        return date(value.year + 1, 1, 1)
+    return date(value.year, value.month + 1, 1)
+
+
 def _month_state(value: date | None) -> str | None:
     if value is None:
         return None
-    return "en_curso" if value >= _month_start() else "cerrado"
+    return "en_curso" if value >= _operational_month_start() else "cerrado"
 
 
 def _decorate_month_row(row: dict[str, Any]) -> dict[str, Any]:
@@ -159,8 +175,8 @@ def _decorate_month_row(row: dict[str, Any]) -> dict[str, Any]:
             f"{existing_note} {override_note}".strip() if existing_note and override_note not in existing_note else override_note
         )
 
-    if estado_mes == "en_curso":
-        out["fecha_ultima_actualizacion"] = _today_santiago()
+    if estado_mes == "en_curso" and out["fecha_ultima_actualizacion"] is None:
+        out["fecha_ultima_actualizacion"] = _operational_today_santiago()
 
     out["is_mes_en_curso"] = estado_mes == "en_curso"
     out["hasta_fecha"] = out["fecha_ultima_actualizacion"] if estado_mes == "en_curso" else None
@@ -465,7 +481,7 @@ def resumen_operacion_mensual(
     date_from: date | None = Query(default=None),
     date_to: date | None = Query(default=None),
 ):
-    current_month = date.today().replace(day=1)
+    current_month = _operational_month_start()
     date_from = date_from or date(current_month.year, 1, 1)
     date_to = date_to or current_month
     sql = f"""
@@ -773,6 +789,7 @@ def resumen_operacion_mensual(
 
 @router.get("/movimientos-mes-2026")
 def movimientos_mes_2026(limit: int = 12):
+    visible_month_end = _next_month_start(_operational_month_start())
     sql = """
     select
       mes,
@@ -821,13 +838,19 @@ def movimientos_mes_2026(limit: int = 12):
       insight_delta
     from analytics.mart_estadistica_movimientos_mes
     where mes >= date_trunc('year', current_date)::date
-      and mes < date_trunc('month', current_date) + interval '1 month'
+      and mes < :visible_month_end
     order by mes asc
     limit :limit
     """
     try:
         with engine.connect() as c:
-            rows = [_decorate_month_row(dict(r._mapping)) for r in c.execute(sql_text(sql), {"limit": int(limit)}).fetchall()]
+            rows = [
+                _decorate_month_row(dict(r._mapping))
+                for r in c.execute(
+                    sql_text(sql),
+                    {"limit": int(limit), "visible_month_end": visible_month_end},
+                ).fetchall()
+            ]
         return {"rows": rows}
     except SQLAlchemyError as e:
         raise HTTPException(status_code=500, detail=f"DB error: {e}")
@@ -1738,6 +1761,7 @@ def ml_score_detalle(
 
 @router.get("/movimientos-mensuales")
 def movimientos_mensuales():
+    visible_month_end = _next_month_start(_operational_month_start())
     sql = """
         select
           mes,
@@ -1778,12 +1802,15 @@ def movimientos_mensuales():
           insight_mtr
         from analytics.mart_estadistica_movimientos_mes_v2
         where mes >= date '2026-01-01'
-          and mes < (date_trunc('month', current_date) + interval '1 month')::date
+          and mes < :visible_month_end
         order by mes
     """
     try:
         with engine.begin() as conn:
-            rows = [_decorate_month_row(dict(r._mapping)) for r in conn.execute(text(sql))]
+            rows = [
+                _decorate_month_row(dict(r._mapping))
+                for r in conn.execute(text(sql), {"visible_month_end": visible_month_end})
+            ]
         return {"rows": rows, "count": len(rows)}
     except SQLAlchemyError as e:
         raise HTTPException(status_code=500, detail=f"DB error: {e}")
@@ -1791,6 +1818,8 @@ def movimientos_mensuales():
 
 @router.get("/mtr-resumen-mes")
 def mtr_resumen_mes():
+    visible_year_start = date(_operational_month_start().year, 1, 1)
+    visible_month_end = _next_month_start(_operational_month_start())
     sql = """
     with mov as (
       select
@@ -1856,13 +1885,22 @@ def mtr_resumen_mes():
     from mov
     left join mov_ext on mov_ext.mes = mov.mes
     left join stock on stock.mes = mov.mes
-    where mov.mes >= date_trunc('year', current_date)::date
-      and mov.mes < (date_trunc('month', current_date) + interval '1 month')::date
+    where mov.mes >= :visible_year_start
+      and mov.mes < :visible_month_end
     order by mov.mes
     """
     try:
         with engine.connect() as c:
-            rows = [dict(r._mapping) for r in c.execute(sql_text(sql)).fetchall()]
+            rows = [
+                dict(r._mapping)
+                for r in c.execute(
+                    sql_text(sql),
+                    {
+                        "visible_year_start": visible_year_start,
+                        "visible_month_end": visible_month_end,
+                    },
+                ).fetchall()
+            ]
         return {"count": len(rows), "data": rows}
     except SQLAlchemyError as e:
         raise HTTPException(status_code=500, detail=f"DB error: {e}")
@@ -6241,7 +6279,7 @@ def get_estadisticas_porcentajes(
           select
             coalesce(nullif(trim(cliente), ''), 'Sin cliente') as cliente,
             count(*) as total
-          from analytics.int_mtr_eventos_dedup
+          from analytics.int_mtr_eventos_dedup_stats
           where tipo_evento = 'INGRESO'
             and fecha_evento_dia >= cast(:date_from as date)
             and fecha_evento_dia <= cast(:date_to as date)
@@ -6261,7 +6299,7 @@ def get_estadisticas_porcentajes(
           select
             coalesce(nullif(trim(cliente), ''), 'Sin cliente') as cliente,
             count(*) as total
-          from analytics.int_mtr_eventos_dedup
+          from analytics.int_mtr_eventos_dedup_stats
           where tipo_evento = 'SALIDA'
             and fecha_evento_dia >= cast(:date_from as date)
             and fecha_evento_dia <= cast(:date_to as date)
@@ -6373,7 +6411,7 @@ def get_rotacion_sku_detalle(id_equipo: str):
           tipo_evento,
           coalesce(nullif(trim(persona), ''), 'Sin persona') as persona,
           coalesce(nullif(trim(cliente), ''), 'Sin cliente') as cliente
-        from analytics.int_mtr_eventos_dedup
+        from analytics.int_mtr_eventos_dedup_stats
         where upper(id_equipo) = upper(:id_equipo)
         order by fecha_evento desc
         limit 50

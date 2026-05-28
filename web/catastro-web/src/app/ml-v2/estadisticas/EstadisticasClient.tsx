@@ -3,6 +3,7 @@
 import Link from "next/link";
 
 import { useMemo, useState } from "react";
+import { formatMonthLabelFromIso, getOperationalMonthSummary } from "@/lib/operationalMonth";
 import { getStatusClassName } from "@/lib/statusStyles";
 import { prettyMlRisk } from "@/lib/statusMatrix";
 
@@ -112,14 +113,16 @@ function pct100(part: number, total: number) {
 }
 
 function monthTone(mesISO: string) {
-  if (mesISO.startsWith("2026-05")) {
+  const { operationalMonthIso, previousMonthIso } = getOperationalMonthSummary();
+
+  if (mesISO.startsWith(operationalMonthIso.slice(0, 7))) {
     return {
       card: "border-amber-400/30",
       chip: "border-amber-400/30 bg-amber-400/10 text-amber-200",
       title: "text-amber-100",
     };
   }
-  if (mesISO.startsWith("2026-04")) {
+  if (mesISO.startsWith(previousMonthIso.slice(0, 7))) {
     return {
       card: "border-emerald-400/30",
       chip: "border-emerald-400/30 bg-emerald-400/10 text-emerald-200",
@@ -134,11 +137,7 @@ function monthTone(mesISO: string) {
 }
 
 function monthLabel(mesISO: string) {
-  // mesISO: YYYY-MM-01
-  const [y, m] = mesISO.slice(0, 10).split("-").map(Number);
-  const meses = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
-  const name = meses[(m || 1) - 1] ?? mesISO;
-  return `${name} ${y}`;
+  return formatMonthLabelFromIso(mesISO);
 }
 
 function Badge({ children, cls }: { children: React.ReactNode; cls: string }) {

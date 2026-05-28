@@ -1,4 +1,5 @@
 import EstadisticasClient from "./EstadisticasClient";
+import { getOperationalMonthSummary } from "@/lib/operationalMonth";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://backend:8000";
 
@@ -76,6 +77,7 @@ export default async function Page() {
     getMLRiskSummary(),
     getMLRiskEquipos(),
   ]);
+  const { previousMonthLabel, operationalMonthLabel } = getOperationalMonthSummary();
 
   return (
     <main className="catastro-page">
@@ -83,7 +85,7 @@ export default async function Page() {
       <div className="catastro-panel-strong mb-6 rounded-3xl p-6">
         <h1 className="text-2xl font-semibold text-[var(--cat-text)]">📊 Estadísticas</h1>
         <div className="text-sm text-[var(--cat-text-muted)]">
-          Paneles mensuales, detalle MTR y observabilidad ML con abril 2026 cerrado y mayo 2026 en curso.
+          Paneles mensuales, detalle MTR y observabilidad ML con {previousMonthLabel.toLowerCase()} cerrado y {operationalMonthLabel.toLowerCase()} en curso.
         </div>
       </div>
 
