@@ -1,0 +1,16 @@
+version: 2
+
+models:
+  - name: mart_timeline_eventos
+    description: "Vista compatibilidad para backend timeline (alias de mart_equipo_timeline_v2)."
+    columns:
+      - name: id_equipo
+        tests: [not_null]
+      - name: tipo_evento
+        tests: [not_null]
+      - name: fecha_evento
+        tests: [not_null]
+      - name: detalle
+      - name: detalle_titulo
+      - name: detalle_subtitulo
+      - name: badge_tipo

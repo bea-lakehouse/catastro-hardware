@@ -1,0 +1,21 @@
+version: 2
+
+sources:
+  # Seeds / tablas que ya venías usando antes
+  - name: raw
+    schema: analytics
+    tables:
+      - name: compras_2025_raw
+      - name: equipos
+
+  # Fuente desde Excel (raw tables cargadas a analytics.*_raw)
+  - name: analytics
+    schema: analytics
+    tables:
+      - name: mtr_1202_equipos_asignados_raw
+      - name: mtr_1202_equ_extranjero_raw
+      - name: equipos_backfill
+      - name: equipos_raw
+      - name: equipos_enriched
+        description: "Equipos enriquecidos (raw + metadata desde MTR)"
+      - name: historia_hw_raw

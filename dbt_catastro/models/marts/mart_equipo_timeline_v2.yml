@@ -1,0 +1,23 @@
+version: 2
+
+models:
+  - name: mart_equipo_timeline_v2
+    description: "Timeline extendido (base + REPARACION desde Excel). No reemplaza la tabla actual."
+    columns:
+      - name: historia_id
+        tests: [not_null, unique]
+
+      - name: id_equipo
+        tests: [not_null]
+
+      - name: fecha_evento
+        tests: [not_null]
+
+      - name: tipo_evento
+        tests: [not_null]
+
+      - name: origen_evento
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['mtr', 'jira', 'conciliado', 'excel:reparados']

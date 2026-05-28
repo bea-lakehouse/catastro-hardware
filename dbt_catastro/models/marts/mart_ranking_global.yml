@@ -1,0 +1,14 @@
+version: 2
+
+models:
+  - name: mart_ranking_global
+    description: "Ranking global ejecutivo de prioridad de equipos"
+    columns:
+      - name: equipo_id
+        tests: [not_null, unique]
+      - name: priority_final_rank
+        tests: [not_null]
+      - name: priority_final_sort_key
+        tests: [not_null]
+      - name: motivo_tipo_colaborador
+        tests: [not_null]

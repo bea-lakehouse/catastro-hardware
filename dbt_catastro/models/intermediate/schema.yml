@@ -1,0 +1,164 @@
+version: 2
+
+models:
+  - name: int_equipo_carbon_matched
+    description: "Match inicial de cada equipo contra reportes OEM, perfiles de energia y factores de red curados."
+    columns:
+      - name: id_equipo
+        tests:
+          - not_null
+          - unique
+
+  - name: int_equipo_carbon_calculated
+    description: "Calculo inicial de huella por equipo con metodologia, confianza y status para la ficha operativa."
+    columns:
+      - name: id_equipo
+        tests:
+          - not_null
+          - unique
+      - name: carbon_status
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['estimado_completo', 'estimado_parcial', 'sin_datos_carbono']
+      - name: carbon_confidence_score
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "in (0.0, 0.3, 0.6, 0.7, 0.8, 1.0)"
+
+  - name: int_equipo_specs_normalized
+    description: "Normalización y parsing de especificaciones técnicas por equipo, con reglas de marca/modelo/SO/RAM/almacenamiento."
+    columns:
+      - name: id_equipo
+        tests:
+          - not_null
+      - name: fuente_origen
+        tests:
+          - not_null
+      - name: filled_specs_count
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+
+  - name: int_politica_equipos
+    description: "Política/segmentación por equipo basada en stg_equipos_enriched + dim_politica_modelo, con calibración por tipo_colaborador."
+    columns:
+      - name: equipo_id
+        description: "ID del equipo (SKU-xxx)."
+        tests:
+          - not_null
+          - unique
+
+      - name: tipo_colaborador
+        description: "core | staffing | unknown (desde MTR si existe, si no unknown)."
+        tests:
+          - accepted_values:
+              values: ['core', 'staffing', 'unknown']
+
+      - name: factor_colaborador
+        description: "core=1, staffing=-1, unknown=0."
+        tests:
+          - accepted_values:
+              values: [-1, 0, 1]
+
+      - name: plataforma
+        description: "mac | windows | unknown (heurística por modelo/so)."
+        tests:
+          - accepted_values:
+              values: ['mac', 'windows', 'unknown']
+
+      - name: generacion_categoria
+        description: "moderno | antiguo (heurística o regla)."
+        tests:
+          - accepted_values:
+              values: ['moderno', 'antiguo']
+
+      - name: segmento_destino
+        description: "Segmento final."
+        tests:
+          - accepted_values:
+              values: ['dev', 'core']
+
+  - name: int_presion_stock
+    description: >
+      Presión de stock por segmento (dev/core) y tipo (moderno/antiguo).
+      Señal operativa para TI Ops y ML: mide desequilibrio demanda vs stock disponible.
+      Demanda actual: ingresos recientes (ventana móvil) + placeholder Jira (0 por ahora).
+    columns:
+      - name: segmento_destino
+        description: "Segmento final (dev/core)."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['dev', 'core']
+      - name: generacion_categoria
+        description: "Categoría (moderno/antiguo)."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['moderno', 'antiguo']
+      - name: presion_nivel
+        description: "Clasificación: baja/media/alta."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['baja', 'media', 'alta']
+
+  - name: int_equipo_jira_rollup
+    description: "Rollup Jira por equipo para consumo operacional y de Home/Activos."
+    tests:
+      - dbt_utils.expression_is_true:
+          expression: "coalesce(jira_open_count, 0) >= 0"
+    columns:
+      - name: equipo_id
+        tests:
+          - not_null
+          - unique
+
+  - name: int_ml_scores_v2_latest
+    description: "Último score ML v2 por equipo con metadata de disponibilidad de fuente."
+    tests:
+      - dbt_utils.expression_is_true:
+          expression: "score is null or score >= 0"
+    columns:
+      - name: entity_id
+        tests:
+          - not_null:
+              config:
+                severity: warn
+          - unique:
+              config:
+                severity: warn
+      - name: ml_source_available
+        tests:
+          - accepted_values:
+              values: [true]
+              config:
+                severity: warn
+
+  - name: int_ml_scores_v3_latest
+    description: "Scoring ML v3 calculado sobre el último snapshot materializado de mart_equipos_estado_actual."
+    tests:
+      - dbt_utils.expression_is_true:
+          expression: "score is null or (score >= 0 and score <= 10)"
+    columns:
+      - name: entity_id
+        tests:
+          - not_null:
+              config:
+                severity: warn
+          - unique:
+              config:
+                severity: warn
+      - name: risk_level
+        tests:
+          - accepted_values:
+              values: ['Alta', 'Media', 'Baja']
+              config:
+                severity: warn
+      - name: ml_source_available_v3
+        tests:
+          - accepted_values:
+              values: [true]
+              config:
+                severity: warn

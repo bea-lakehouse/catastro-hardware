@@ -1,0 +1,24 @@
+version: 2
+
+models:
+  - name: mart_backlog_compras
+    description: >
+      Backlog de compras (CapEx): equipos core + renovar + severidad relevante,
+      agrupado por mes sugerido / segmento / modelo sugerido, con costo estimado.
+    columns:
+      - name: mes_sugerido
+        tests: [not_null]
+      - name: segmento_destino
+        tests: [not_null]
+      - name: modelo_sugerido
+        tests: [not_null]
+      - name: cantidad_equipos
+        tests: [not_null]
+      - name: costo_unitario_usd
+        tests: [not_null]
+      - name: costo_total_usd
+        tests: [not_null]
+      - name: prioridad_mejor_rank
+        tests: [not_null]
+      - name: equipo_ids
+        tests: [not_null]

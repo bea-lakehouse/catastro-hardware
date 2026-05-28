@@ -1,0 +1,20 @@
+version: 2
+
+models:
+  - name: fact_compras_2025
+    description: Hechos de compras 2025 (normalizado).
+    columns:
+      - name: id_compra
+        tests:
+          - not_null
+          - unique
+
+      - name: fecha_compra
+        tests:
+          - not_null
+
+      - name: valor_neto
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"

@@ -1,0 +1,58 @@
+{{ config(materialized='table', tags=['marts', 'sustainability', 'carbon']) }}
+
+with calculated as (
+  select *
+  from {{ ref('int_equipo_carbon_calculated') }}
+)
+
+select
+  id_equipo,
+  sku,
+  marca,
+  modelo,
+  tipo_equipo,
+  sistema_operativo,
+  procesador,
+  ram_gb,
+  almacenamiento_gb,
+  almacenamiento_tipo,
+  pantalla,
+  anio_modelo,
+  serial,
+  cliente,
+  fecha_compra,
+  tipo_colaborador,
+  localizacion_raw,
+  ciudad_comuna,
+  specs_fuente_origen,
+  specs_confidence_score,
+  specs_status,
+  device_category,
+  carbon_electricity_country,
+  electricity_country_confidence,
+  electricity_country_source,
+  carbon_grid_factor_kgco2e_kwh,
+  carbon_grid_reference_year,
+  carbon_grid_source,
+  carbon_grid_source_url,
+  carbon_grid_source_confidence,
+  carbon_report_name,
+  carbon_report_region,
+  carbon_source_vendor,
+  carbon_source_url,
+  carbon_source_vendor_confidence,
+  carbon_methodology_source,
+  carbon_assumed_lifetime_years,
+  carbon_use_annual_kwh,
+  carbon_report_total_kgco2e,
+  carbon_embodied_kgco2e,
+  carbon_use_annual_kgco2e,
+  carbon_use_lifetime_kgco2e,
+  carbon_total_estimated_kgco2e,
+  carbon_method,
+  carbon_confidence_score,
+  carbon_status,
+  carbon_override_reason,
+  carbon_override_source,
+  current_timestamp as _loaded_at
+from calculated

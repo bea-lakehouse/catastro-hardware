@@ -1,0 +1,10 @@
+version: 2
+
+models:
+  - name: stg_compras_2025_raw
+    columns:
+      - name: valor_neto
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "> 0"

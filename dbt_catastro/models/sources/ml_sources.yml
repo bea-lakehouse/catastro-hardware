@@ -1,0 +1,7 @@
+version: 2
+
+sources:
+  - name: ml
+    schema: ml
+    tables:
+      - name: vw_scores_v2_latest

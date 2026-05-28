@@ -1,0 +1,26 @@
+version: 2
+
+models:
+  - name: fct_movimientos_detalle
+    description: "Fact de movimientos (ASIGNACION/DEVOLUCION) derivada de staging MTR."
+    columns:
+      - name: movimiento_id
+        tests: [not_null, unique]
+
+      - name: id_equipo
+        tests: [not_null]
+
+      - name: fecha_movimiento
+        tests: [not_null]
+
+      - name: tipo_movimiento
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['ASIGNACION', 'DEVOLUCION']
+
+      - name: cliente_origen
+        tests: [not_null]
+
+      - name: cliente_destino
+        tests: [not_null]

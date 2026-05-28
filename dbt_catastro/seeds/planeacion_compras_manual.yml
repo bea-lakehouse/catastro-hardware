@@ -1,0 +1,48 @@
+version: 2
+
+seeds:
+  - name: planeacion_compras_manual
+    description: "Compras confirmadas y pendientes cargadas manualmente para planeacion ejecutiva."
+    config:
+      schema: analytics
+      quote_columns: false
+      column_types:
+        id_compra_manual: text
+        mes_referencia: date
+        fecha_compra: date
+        empresa: text
+        proveedor: text
+        marca: text
+        modelo: text
+        os_familia: text
+        tipo_equipo: text
+        cantidad: integer
+        estado_compra: text
+        tipo_stock: text
+        cuenta_stock_disponible: boolean
+        cuenta_stock_planificado: boolean
+        fecha_estimada_entrega: date
+        fecha_ingreso_real: date
+        observaciones: text
+    columns:
+      - name: id_compra_manual
+        tests: [not_null, unique]
+      - name: mes_referencia
+        tests: [not_null]
+      - name: empresa
+        tests: [not_null]
+      - name: proveedor
+        tests: [not_null]
+      - name: cantidad
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "> 0"
+      - name: estado_compra
+        tests:
+          - accepted_values:
+              values: ['CONFIRMADA', 'PENDIENTE', 'RECIBIDA', 'CANCELADA']
+      - name: tipo_stock
+        tests:
+          - accepted_values:
+              values: ['CONFIRMADO', 'PROYECTADO', 'REAL', 'STOCK_REAL']

@@ -1,0 +1,12 @@
+version: 2
+
+models:
+  - name: stg_reparaciones_excel
+    description: "Reparaciones normalizadas desde seed reparaciones_raw"
+    columns:
+      - name: id_equipo
+        tests: [not_null]
+      - name: fecha_evento
+        tests: [not_null]
+      - name: tipo_evento
+        tests: [not_null]

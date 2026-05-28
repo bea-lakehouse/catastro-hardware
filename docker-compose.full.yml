@@ -1,0 +1,32 @@
+services:
+  backend:
+    build: ./backend
+    container_name: catastro-backend
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://usuario:password@host.docker.internal:5432/ti_ops
+      JIRA_BASE_URL: ${JIRA_BASE_URL}
+      JIRA_EMAIL: ${JIRA_EMAIL}
+      JIRA_API_TOKEN: ${JIRA_API_TOKEN}
+      JIRA_TIMELINE_ENABLED: ${JIRA_TIMELINE_ENABLED}
+    ports:
+      - "8000:8000"
+    command: uvicorn main:app --host 0.0.0.0 --port 8000
+
+  web:
+    build:
+      context: ./web/catastro-web
+      dockerfile: Dockerfile
+    container_name: catastro-web
+    environment:
+      API_BASE: http://backend:8000
+      NEXT_PUBLIC_API_BASE: http://backend:8000
+    depends_on:
+      - backend
+    command:
+      - sh
+      - -lc
+      - npx next dev --hostname 0.0.0.0 --port 3000
+    ports:
+      - "3000:3000"

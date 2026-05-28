@@ -1,0 +1,61 @@
+# env
+.env
+.env.*
+*.env
+
+# python
+.venv
+.venv_dbt
+__pycache__/
+*.pyc
+
+# node
+node_modules/
+.next/
+
+# mac
+.DS_Store
+
+# logs
+logs/
+*.log
+
+# local temp
+tmp/
+tmp_mtr*/
+dist/
+build/
+
+# secrets
+*.pem
+*.key
+*.json
+
+# db
+*.sqlite
+*.db
+
+# no subir datos reales/locales
+_no_subir_mtr/
+data/
+Hardware/
+assets/
+*.xlsx
+*.csv
+*.bak*
+*.SAFE
+*.DISABLED*
+
+# envs
+.env
+.env.*
+backend/.env
+
+# backups
+*.bak
+*.bak.*
+*.old
+*.tmp
+env.local
+*.local
+*.BROKEN*

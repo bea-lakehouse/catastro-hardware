@@ -1,0 +1,21 @@
+version: 2
+
+models:
+  - name: stg_planeacion_compras_manual
+    description: "Normalizacion de compras manuales confirmadas y pendientes para planeacion."
+    columns:
+      - name: id_compra_manual
+        tests: [not_null, unique]
+      - name: id_compra
+        tests: [not_null, unique]
+      - name: mes_referencia
+        tests: [not_null]
+      - name: cantidad
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "> 0"
+      - name: estado_compra
+        tests:
+          - accepted_values:
+              values: ['CONFIRMADA', 'PENDIENTE', 'RECIBIDA', 'CANCELADA']

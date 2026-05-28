@@ -1,0 +1,101 @@
+version: 2
+
+models:
+  - name: mart_planeacion_compras_resumen_mes
+    description: "Resumen mensual de compras confirmadas y pendientes por empresa, proveedor y modelo."
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - mes
+            - empresa
+            - proveedor
+            - marca
+            - modelo
+            - estado_compra
+    columns:
+      - name: mes
+        tests: [not_null]
+      - name: estado_compra
+        tests:
+          - accepted_values:
+              values: ['CONFIRMADA', 'PENDIENTE', 'RECIBIDA', 'CANCELADA']
+      - name: equipos_total
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+
+  - name: mart_planeacion_compras_ejecutivo_mes
+    description: "Resumen ejecutivo mensual para dashboard de planeacion y preparacion del mes siguiente."
+    columns:
+      - name: mes
+        tests: [not_null, unique]
+      - name: total_confirmadas
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+      - name: total_pendientes
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+
+  - name: mart_planeacion_compras_tendencia_mes
+    description: "Serie mensual para leer presión, cobertura y gap, incluyendo el mes siguiente proyectado."
+    columns:
+      - name: mes
+        tests: [not_null, unique]
+      - name: demanda_presion_compra_mes
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+      - name: total_confirmadas
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+      - name: total_pendientes
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+
+  - name: mart_planeacion_forecast_demanda_mes
+    description: "Forecast simple de presión de compra para el ciclo siguiente usando ponderación 50/30/20 sobre la presión reciente."
+    columns:
+      - name: mes
+        tests: [not_null, unique]
+      - name: forecast_presion_base
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+      - name: forecast_presion_bajo
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+      - name: forecast_presion_alto
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+
+  - name: mart_planeacion_compras_tracking
+    description: "Tracking ejecutivo de compras confirmadas, pendientes, recibidas o canceladas para explicar qué destraba cobertura y qué ya ingresó físicamente."
+    columns:
+      - name: mes
+        tests: [not_null]
+      - name: id_compra
+        tests: [not_null]
+      - name: estado
+        tests:
+          - accepted_values:
+              values: ['CONFIRMADA', 'PENDIENTE', 'RECIBIDA', 'CANCELADA']
+      - name: cantidad
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"

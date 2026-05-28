@@ -1,0 +1,25 @@
+version: 2
+
+models:
+  - name: fact_planeacion_compras
+    description: "Hechos de compras y compras pendientes para planeacion mensual y ejecutiva."
+    columns:
+      - name: id_compra_manual
+        tests: [not_null, unique]
+      - name: id_compra
+        tests: [not_null, unique]
+      - name: mes_operacion
+        tests: [not_null]
+      - name: empresa
+        tests: [not_null]
+      - name: proveedor
+        tests: [not_null]
+      - name: cantidad
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "> 0"
+      - name: estado_compra
+        tests:
+          - accepted_values:
+              values: ['CONFIRMADA', 'PENDIENTE', 'RECIBIDA', 'CANCELADA']

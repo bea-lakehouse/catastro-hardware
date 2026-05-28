@@ -1,0 +1,365 @@
+version: 2
+
+models:
+  - name: mart_planeacion_con_compras
+    description: "Puente entre Planeación y las compras documentales 2026 para contrastar stock base vs cobertura ajustada por compras reales y proyectadas."
+    columns:
+      - name: mes
+        tests: [not_null, unique]
+      - name: compras_documentales_facturadas
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+      - name: compras_proyectadas
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+
+  - name: mart_forecast_compras
+    description: "Escenario de forecast documental para junio 2026 basado en órdenes de compra planeadas."
+    columns:
+      - name: mes
+        tests: [not_null]
+      - name: cantidad_planeada
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "> 0"
+
+  - name: mart_compras_equipos_resumen_mes
+    description: "Resumen mensual documental de compras 2026 con facturado, recibido, proyectado y brechas de conciliación."
+    columns:
+      - name: mes
+        tests: [not_null, unique]
+      - name: documentos_total
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+
+  - name: mart_compras_equipos_2026
+    description: "Detalle línea a línea de compras 2026, listo para UI, backend y conciliación con inventario."
+    columns:
+      - name: linea_id
+        tests: [not_null, unique]
+      - name: conciliacion_status
+        tests:
+          - accepted_values:
+              values: ['sin_aplicar', 'conciliado_serial', 'pendiente_conciliacion', 'forecast_planeado', 'compra_confirmada']
+
+  - name: mart_equipo_sustainability
+    description: "Mart inicial de sostenibilidad por equipo con huella OEM, energia anual estimada y metadata metodologica."
+    columns:
+      - name: id_equipo
+        tests: [not_null, unique]
+      - name: carbon_status
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['estimado_completo', 'estimado_parcial', 'sin_datos_carbono']
+      - name: carbon_confidence_score
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "in (0.0, 0.3, 0.6, 0.7, 0.8, 1.0)"
+
+  - name: mart_equipo_specs
+    description: "Mart consolidado de especificaciones técnicas por equipo, listo para ficha operativa y futuras capas de sostenibilidad."
+    columns:
+      - name: id_equipo
+        tests: [not_null, unique]
+      - name: specs_status
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['completo', 'parcial', 'sin_specs']
+      - name: specs_confidence_score
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "in (0.0, 0.4, 0.7, 1.0)"
+
+  - name: mart_equipos_estado_actual
+    description: "Mart central operativo por equipo consumido por Home, Activos, Estadísticas y detalle."
+    tests:
+      - dbt_utils.expression_is_true:
+          expression: "coalesce(jira_open_count, 0) >= 0"
+      - dbt_utils.expression_is_true:
+          expression: "ml_score is null or ml_score >= 0"
+      - dbt_utils.expression_is_true:
+          expression: "ml_score_v3 is null or (ml_score_v3 >= 0 and ml_score_v3 <= 10)"
+      - dbt_utils.expression_is_true:
+          expression: "priority_final_rank is null or priority_final_rank >= 0"
+    columns:
+      - name: id_equipo
+        tests:
+          - not_null
+          - unique
+      - name: estado_operativo
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['ASIGNADO', 'STAND_BY', 'BAJA', 'DISPONIBLE']
+      - name: clasificacion_operacional
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['ACTIVO', 'DISPONIBLE', 'ASIGNADO', 'OBSOLETO', 'RENOVAR', 'BAJA_REQUERIDA', 'VENDIDO', 'DADO_DE_BAJA', 'OBSERVACION', 'MANTENER']
+      - name: lifecycle_estado
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['ACTIVO', 'DISPONIBLE', 'ASIGNADO', 'OBSOLETO', 'RENOVAR', 'BAJA_REQUERIDA', 'VENDIDO', 'DADO_DE_BAJA', 'OBSERVACION', 'MANTENER']
+      - name: fuente_clasificacion_operativa
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['MTR_OVERRIDE', 'REGLA_MODELO', 'ESTADO_OPERATIVO']
+      - name: es_activo_operativo
+        tests:
+          - accepted_values:
+              values: [true, false]
+      - name: ml_activo_operativo
+        tests:
+          - accepted_values:
+              values: [true, false]
+      - name: marca
+        tests:
+          - not_null:
+              config:
+                severity: warn
+      - name: modelo
+        tests:
+          - not_null:
+              config:
+                severity: warn
+      - name: cliente
+        tests:
+          - not_null:
+              config:
+                severity: warn
+      - name: ml_source_available
+        tests:
+          - accepted_values:
+              values: [true, false]
+      - name: ml_risk_level_v3
+        tests:
+          - accepted_values:
+              values: ['Alta', 'Media', 'Baja']
+              config:
+                severity: warn
+                where: "ml_risk_level_v3 is not null"
+      - name: ml_source_available_v3
+        tests:
+          - accepted_values:
+              values: [true, false]
+      - name: specs_status
+        tests:
+          - accepted_values:
+              values: ['completo', 'parcial', 'sin_specs']
+              config:
+                severity: warn
+                where: "specs_status is not null"
+      - name: specs_confidence_score
+        tests:
+          - accepted_values:
+              values: [0.0, 0.4, 0.7, 1.0]
+              quote: false
+              config:
+                where: "specs_confidence_score is not null"
+      - name: carbon_status
+        tests:
+          - accepted_values:
+              values: ['estimado_completo', 'estimado_parcial', 'sin_datos_carbono']
+              config:
+                severity: warn
+                where: "carbon_status is not null"
+      - name: carbon_confidence_score
+        tests:
+          - accepted_values:
+              values: [0.0, 0.3, 0.6, 0.7, 0.8, 1.0]
+              quote: false
+              config:
+                where: "carbon_confidence_score is not null"
+
+  - name: mart_alertas_acciones
+    description: "Acciones sugeridas derivadas de alertas (mart_equipos_estado_actual.alertas_json)."
+    columns:
+      - name: tipo_accion
+        tests: [not_null]
+
+      - name: prioridad
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Alta','Media','Baja']
+
+  - name: mart_mtr_jira_reconciliacion
+    description: "Reconciliación MTR vs Jira SKU/EQUIPAMIENTO para cobertura, inconsistencias y workflow administrativo."
+    columns:
+      - name: id_equipo
+        tests:
+          - not_null
+          - unique
+      - name: conciliacion_estado
+        tests:
+          - accepted_values:
+              values: ['CONCILIADO', 'JIRA_SOLO', 'MTR_SOLO', 'JIRA_SIN_MATCH_MTR', 'MTR_SIN_MATCH_JIRA', 'ESTADO_DISTINTO', 'RESERVADO_JIRA_ASIGNADO_MTR', 'ASIGNADO_JIRA_DISPONIBLE_MTR', 'CREADO_JIRA_SIN_INGRESO_MTR', 'SIN_FUENTE']
+
+  - name: mart_equipo_audit_log
+    description: "Auditoría formal de cambios por equipo con before/after, origen, actor y confianza, construida sobre snapshots MTR/Google Sheets, Jira, reparaciones e inconsistencias conciliadas."
+    columns:
+      - name: audit_id
+        tests: [not_null, unique]
+      - name: id_equipo
+        tests: [not_null]
+      - name: campo_modificado
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['cliente', 'persona_asignada', 'estado', 'marca', 'modelo', 'ubicacion', 'asignacion', 'disponibilidad', 'estado_jira', 'origen']
+      - name: tipo_cambio
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['cambio_cliente', 'cambio_persona', 'cambio_estado', 'cambio_estado_jira', 'ingreso_equipo', 'salida_equipo', 'reserva_jira', 'asignacion_jira', 'conciliacion_mtr_jira', 'inconsistencia_detectada']
+      - name: origen
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['MTR', 'Jira', 'Google Sheets', 'Excel Reparados', 'Catastro']
+      - name: criticidad
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['BAJA', 'MEDIA', 'ALTA', 'CRITICA']
+      - name: confianza
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['ALTA', 'MEDIA', 'BAJA']
+
+  - name: mart_confianza_dato
+    description: "Nivel formal de confianza por equipo, construido sobre conciliación MTR/Jira y estabilidad reciente de auditoría."
+    columns:
+      - name: id_equipo
+        tests: [not_null, unique]
+      - name: confianza_dato
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['ALTA', 'MEDIA', 'BAJA', 'CRITICA']
+      - name: confianza_score
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "between 0 and 100"
+
+  - name: mart_operacion_sla
+    description: "Capa operativa de aging y SLA por equipo, orientada a backlog Jira y estancamiento físico MTR."
+    columns:
+      - name: id_equipo
+        tests: [not_null, unique]
+      - name: sla_estado
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['VENCIDO', 'EN_PLAZO', 'OBSERVACION', 'SIN_ALERTA']
+      - name: aging_bucket
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['0d', '1-7d', '8-30d', '31-90d', '91+d']
+
+  - name: mart_operacion_alertas
+    description: "Centro operacional de alertas: brechas entre MTR, Jira, auditoría, timeline y políticas de hardware."
+    columns:
+      - name: alert_id
+        tests: [not_null, unique]
+      - name: id_equipo
+        tests:
+          - not_null
+      - name: tipo_alerta
+        tests:
+          - not_null
+          - accepted_values:
+              values:
+                - equipo_asignado_sin_persona
+                - jira_asignado_mtr_disponible
+                - jira_reservado_mtr_asignado
+                - ticket_jira_sin_ingreso_mtr
+                - mtr_sin_jira
+                - jira_sin_mtr
+                - equipo_con_cambios_frecuentes_30d
+                - equipo_sin_movimiento_reciente
+                - issue_jira_abierto_mas_7d
+                - mac_a2141_staffing_sin_renovacion
+                - dell_activo_pendiente_baja
+                - inconsistencia_operativa_mtr_jira
+      - name: criticidad
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['CRITICA', 'ALTA', 'MEDIA', 'BAJA', 'INFO']
+      - name: estado_alerta
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['ABIERTA', 'OBSERVADA', 'RESUELTA']
+      - name: confianza_dato
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['ALTA', 'MEDIA', 'BAJA', 'CRITICA']
+
+  - name: mart_catastro_historia_eventos
+    description: "Base histórica de eventos Catastro desde 2024, enriquecida con dimensiones actuales de equipo y banderas de negocio trazables."
+    columns:
+      - name: fecha_evento
+        tests: [not_null]
+      - name: mes
+        tests: [not_null]
+      - name: tipo_evento
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['INGRESO', 'SALIDA']
+      - name: empresa
+        tests:
+          - not_null
+      - name: tipo_colaborador
+        tests:
+          - accepted_values:
+              values: ['core', 'staffing', 'unknown']
+      - name: os_familia
+        tests:
+          - accepted_values:
+              values: ['MAC', 'WIN', 'APPLE_MOBILE', 'UNKNOWN']
+      - name: politica_modelo
+        tests:
+          - accepted_values:
+              values: ['DELL_BAJA', 'M1_OBSERVACION', 'A2141_RENOVAR', 'ESTANDAR']
+
+  - name: mart_catastro_historia_mensual
+    description: "Consolidado histórico mensual de Catastro desde 2024 hasta hoy, con métricas operativas, presión de compra y referencias actuales de stock."
+    columns:
+      - name: mes
+        tests:
+          - not_null
+          - unique
+      - name: stock_historico_reconstruible
+        tests:
+          - accepted_values:
+              values: [true, false]
+
+  - name: mart_catastro_historia_mensual_dimension
+    description: "Serie histórica mensual por dimensión de análisis para UI y narrativa ejecutiva."
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - mes
+            - dimension_name
+            - dimension_value
+    columns:
+      - name: dimension_name
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['empresa', 'tipo_equipo', 'marca', 'modelo', 'os_familia', 'tipo_colaborador', 'ambito', 'politica_modelo']
+      - name: dimension_value
+        tests: [not_null]

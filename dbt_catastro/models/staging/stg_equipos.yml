@@ -1,0 +1,16 @@
+version: 2
+
+models:
+  - name: stg_equipos
+    columns:
+      - name: id_equipo
+        tests:
+          - not_null
+          - unique
+
+      - name: fecha_compra
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "<= current_date"
+
+      - name: estado

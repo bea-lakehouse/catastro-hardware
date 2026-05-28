@@ -1,0 +1,23 @@
+name: dbt_catastro
+version: '1.0'
+profile: dbt_catastro
+
+models:
+  dbt_catastro:
+    staging:
+      +materialized: view
+    core:
+      +materialized: table
+    marts:
+      +materialized: table
+
+vars:
+  vida_util_meses: 36          # vida útil para “renovar”
+  ventana_renovar_dias: 90     # “vencen en <= 90 días”
+  sin_asignacion_dias: 30      # “sin asignación hace > X días”
+  rotacion_alta_12m: 4         # “investigar” si >= 4 movimientos 12m
+  mtr_operational_horizon_days: 7
+  mtr_raw_freshness_warn_hours: 48
+  mtr_raw_freshness_error_hours: 168
+  jira_raw_freshness_warn_hours: 24
+  jira_raw_freshness_error_hours: 72

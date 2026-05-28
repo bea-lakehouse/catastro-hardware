@@ -1,0 +1,220 @@
+version: 2
+
+models:
+  - name: stg_compras_documentos_2026
+    description: "Cabecera normalizada de facturas, guías de despacho y órdenes de compra 2026."
+    columns:
+      - name: documento_id
+        tests: [not_null, unique]
+      - name: tipo_documento
+        tests:
+          - accepted_values:
+              values: ['factura', 'guia_despacho', 'orden_compra']
+      - name: fecha_emision
+        tests: [not_null]
+
+  - name: stg_compras_documentos_2026_lineas
+    description: "Líneas normalizadas de documentos 2026, con equipos y seriales visibles."
+    columns:
+      - name: linea_id
+        tests: [not_null, unique]
+      - name: documento_id
+        tests: [not_null]
+      - name: cantidad
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "> 0"
+
+  - name: stg_equipo_sustainability_inputs
+    description: "Inputs consolidados para sostenibilidad por equipo con specs, datos operativos y pais electrico derivado."
+    columns:
+      - name: id_equipo
+        tests:
+          - not_null
+          - unique
+      - name: electricity_country_confidence
+        tests:
+          - accepted_values:
+              values: ['alta', 'media', 'baja']
+      - name: device_category
+        tests:
+          - accepted_values:
+              values: ['notebook', 'unknown']
+
+  - name: stg_equipo_specs
+    description: "Consolidado raw de candidatos de especificaciones técnicas por equipo desde MTR, staging legado y backfill."
+    columns:
+      - name: id_equipo
+        tests:
+          - not_null
+      - name: fuente_origen
+        tests:
+          - not_null
+      - name: source_priority
+        tests:
+          - not_null
+
+  - name: stg_mtr_google_sheet_equipos_asignados
+    description: "Normalización de raw.mtr_google_sheet_rows para el source_name equipos_asignados del Google Sheet MTR."
+    columns:
+      - name: id_equipo
+        tests:
+          - not_null
+          - unique
+      - name: sku
+        tests:
+          - not_null
+          - unique
+      - name: tipo_colaborador_mtr
+        tests:
+          - accepted_values:
+              values: ['core', 'staffing', 'unknown']
+
+  - name: stg_mtr_google_sheet_equipos_disponibles
+    description: "Normalización de raw.mtr_google_sheet_rows para el source_name equipos_disponibles del Google Sheet MTR."
+    columns:
+      - name: id_equipo
+        tests:
+          - not_null
+          - unique
+      - name: sku
+        tests:
+          - not_null
+          - unique
+
+  - name: stg_mtr_google_sheet_ingresos
+    description: "Normalización de raw.mtr_google_sheet_rows para el source_name ingresos del Google Sheet MTR."
+    columns:
+      - name: id_equipo
+        tests:
+          - not_null:
+              config:
+                severity: warn
+      - name: fecha_evento
+        tests:
+          - not_null
+
+  - name: stg_mtr_google_sheet_salidas
+    description: "Normalización de raw.mtr_google_sheet_rows para el source_name salidas del Google Sheet MTR."
+    columns:
+      - name: id_equipo
+        tests:
+          - not_null:
+              config:
+                severity: warn
+      - name: fecha_evento
+        tests:
+          - not_null
+
+  - name: stg_mtr_equipos_asignados
+    description: "Estado operativo MTR consolidado, con prioridad de Google Sheets y fallback legacy trazable."
+    columns:
+      - name: id_equipo
+        tests:
+          - not_null
+          - unique
+      - name: mtr_assignment_source
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['google_sheet', 'legacy_compat_view']
+
+  - name: stg_mtr_equipos_asignados_detalle
+    description: "Staging de equipos asignados (detalle) desde raw.mtr_equipos_asignados_detalle. SKU se normaliza a bigint; tipo_colaborador se normaliza a core/staffing/unknown."
+    columns:
+      - name: sku
+        description: "SKU normalizado a bigint."
+        tests:
+          - not_null
+          - unique
+
+      - name: id_equipo
+        description: "Identificador derivado (SKU-<sku>)."
+        tests:
+          - not_null
+
+      - name: tipo_colaborador
+        description: "Core/Staffing normalizado desde raw.tipo_de_colaborador. unknown si viene vacío o fuera de catálogo."
+        tests:
+          - accepted_values:
+              values: ['core', 'staffing', 'unknown']
+
+  - name: stg_mtr_equipos_asignados_detalle__dq_sku_null
+    description: "Filas del raw con sku NULL (ruido / filas vacías del Excel)."
+    columns:
+      - name: sku
+        description: "SKU viene NULL en este dataset por definición."
+        # sin tests: es un dataset de problemas, no queremos que falle el pipeline
+
+
+  - name: stg_mtr_equipos_asignados_detalle__dq_summary
+    description: "Resumen de calidad: raw vs staging OK vs filas con sku null."
+    columns:
+      - name: other_gap_rows
+        description: "Debe ser 0 si la diferencia raw - stg_ok se explica por dq_sku_null."
+        tests:
+          - accepted_values:
+              values: [0]
+
+  - name: stg_equipos_enriched
+    description: "Inventario enriquecido: stg_equipos (parque completo) + specs/colaborador desde MTR asignados cuando existe."
+    columns:
+      - name: id_equipo
+        tests:
+          - not_null
+          - unique
+      - name: sku
+        tests:
+          - not_null
+      - name: tipo_colaborador
+        tests:
+          - accepted_values:
+              values: ['core', 'staffing', 'unknown']
+      - name: mtr_specs_source_used
+        tests:
+          - accepted_values:
+              values: ['google_sheet', 'legacy_tmp_view']
+
+  - name: stg_jira_issues
+    description: "Issues Jira normalizados y vinculados al id_equipo con trazabilidad de resolución."
+    columns:
+      - name: issue_id
+        tests:
+          - not_null
+          - unique
+      - name: id_equipo
+        tests:
+          - not_null:
+              config:
+                severity: warn
+      - name: id_equipo_resolved_from
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['raw_snapshot', 'issue_key_sku_project', 'explicit_customfield', 'label', 'summary', 'customfield_scan', 'unresolved']
+      - name: board_bucket
+        tests:
+          - accepted_values:
+              values: ['CREADO', 'POR_RECUPERAR', 'RESGUARDO', 'DEFECTUOSO', 'OBSOLETO', 'BAJA', 'RESERVADO', 'ASIGNADO', 'DISPONIBLE', 'CERRADO', 'EN_PROGRESO', 'PENDIENTE']
+              config:
+                severity: warn
+                where: "board_bucket is not null"
+      - name: estado_equipo_jira
+        tests:
+          - accepted_values:
+              values: ['CREADO', 'RESERVADO', 'ASIGNADO']
+              config:
+                severity: warn
+                where: "estado_equipo_jira is not null"
+
+  - name: stg_equipos_enriched__dq_missing_specs
+    description: "DQ: equipos del parque con specs faltantes (marca/modelo/cpu/ram/so/serie)."
+    tests:
+      - dbt_utils.expression_is_true:
+          expression: "1=1"
+          config:
+            severity: warn
+    columns:
+      - name: id_equipo
+        tests:
+          - not_null

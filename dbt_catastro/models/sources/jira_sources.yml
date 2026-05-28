@@ -1,0 +1,49 @@
+version: 2
+
+sources:
+  - name: raw
+    schema: raw
+    tables:
+      - name: jira_issues
+        description: "Snapshot raw de issues Jira sincronizados desde Jira Cloud search/jql en ti_ops.raw.jira_issues"
+        loaded_at_field: inserted_at
+        freshness:
+          warn_after:
+            count: "{{ var('jira_raw_freshness_warn_hours') | int }}"
+            period: hour
+          error_after:
+            count: "{{ var('jira_raw_freshness_error_hours') | int }}"
+            period: hour
+        columns:
+          - name: issue_id
+          - name: issue_key
+          - name: summary
+          - name: status_name
+          - name: assignee_display_name
+          - name: reporter_display_name
+          - name: project_id
+          - name: project_key
+          - name: project_name
+          - name: created_at
+          - name: updated_at
+          - name: raw
+          - name: inserted_at
+      - name: raw_jira_webhook_events
+        description: "Eventos raw recibidos desde Jira Webhook (FastAPI) en ti_ops.raw.raw_jira_webhook_events"
+        loaded_at_field: inserted_at
+        freshness:
+          warn_after:
+            count: "{{ var('jira_raw_freshness_warn_hours') | int }}"
+            period: hour
+          error_after:
+            count: "{{ var('jira_raw_freshness_error_hours') | int }}"
+            period: hour
+        columns:
+          - name: id
+          - name: inserted_at
+          - name: event_id
+          - name: webhook_event
+          - name: issue_key
+          - name: issue_id
+          - name: equipo_id
+          - name: payload

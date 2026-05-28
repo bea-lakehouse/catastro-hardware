@@ -1,0 +1,322 @@
+version: 2
+
+seeds:
+
+  - name: mtr_equipos_asignados_norm
+    config:
+      quote_columns: false
+      column_types:
+        sku: text
+        estatus_del_equipo: text
+        cliente: text
+        empleado_asignado: text
+        ambito_laboral: text
+        localizacion: text
+        ciudad_comuna: text
+        fecha_de_compra: text
+
+  - name: mtr_ingresos_norm
+    config:
+      quote_columns: false
+      column_types:
+        sku: text
+        fecha_evento: text
+        tipo_evento: text
+        persona: text
+        detalle: text
+
+  - name: mtr_salidas_norm
+    config:
+      quote_columns: false
+      column_types:
+        sku: text
+        fecha_evento: text
+        tipo_evento: text
+        persona: text
+        detalle: text
+
+  - name: mtr_salidas_manual
+    description: "Salidas manuales complementarias para faltantes que no llegaron por la fuente operativa MTR."
+    config:
+      schema: analytics
+      quote_columns: false
+      column_types:
+        nombre: text
+        rut: text
+        fecha_salida: text
+        cliente: text
+        pais: text
+        fuente: text
+        observacion: text
+    columns:
+      - name: nombre
+        tests: [not_null]
+      - name: fecha_salida
+        tests: [not_null]
+      - name: cliente
+      - name: fuente
+
+  - name: reparaciones_raw
+    description: "Reparaciones (desde Excel MTR Reparados.xlsx) normalizado a CSV"
+    config:
+      schema: analytics
+      quote_columns: false
+      column_types:
+        sku: text
+        serial: text
+        fecha_reparacion: timestamp
+        problema_detectado: text
+        reparacion_realizada: text
+        encargado: text
+        comentario: text
+        sheet: text
+    columns:
+      - name: sku
+        tests:
+          - not_null
+
+  - name: dim_costos_modelo_estimados
+    description: "Costos unitarios estimados por modelo sugerido (match por pattern_like)."
+    columns:
+      - name: priority
+        tests: [not_null]
+      - name: pattern_like
+        tests: [not_null]
+      - name: costo_unitario_usd
+        tests: [not_null]
+      - name: moneda
+      - name: comentario
+
+  - name: capex_hardware_referencias
+    description: "Referencias manuales de precio unitario para traducir planeación operativa a CAPEX estimado."
+    config:
+      schema: analytics
+      quote_columns: false
+      column_types:
+        modelo: text
+        proveedor: text
+        empresa: text
+        precio_unitario: numeric(14,2)
+        moneda: text
+        vigencia_desde: date
+        vigencia_hasta: date
+        observacion: text
+    columns:
+      - name: modelo
+        tests: [not_null]
+      - name: proveedor
+        tests: [not_null]
+      - name: empresa
+        tests: [not_null]
+      - name: precio_unitario
+        tests: [not_null]
+
+  - name: estadisticas_movimientos_override_manual
+    description: "Overrides manuales auditables para el cuadro mensual de Estadísticas cuando el negocio pide reflejar valores del cuadro MTR visibles en pantalla."
+    config:
+      schema: analytics
+      quote_columns: false
+      column_types:
+        mes: date
+        cambios_reemplazos_mtr: integer
+        ingresos_hardware_override: integer
+        equipos_reutilizados_override: integer
+        reasignaciones_hardware_override: integer
+        cambios_equipo_real_override: integer
+        equipos_retornados_override: integer
+        devoluciones_hardware_override: integer
+        equipos_baja_override: integer
+        movimientos_internos_sin_impacto_override: integer
+        ingresos_internos_override: integer
+        nuevos_con_equipo_override: integer
+        ingresos_nuevos_con_equipo_override: integer
+        nuevos_sin_equipo_override: integer
+        ingresos_nuevos_sin_equipo_override: integer
+        presion_compra_override: integer
+        stock_disponible_override: integer
+        override_scope: text
+        override_note: text
+    columns:
+      - name: mes
+        tests: [not_null, unique]
+      - name: cambios_reemplazos_mtr
+      - name: override_scope
+      - name: override_note
+
+  - name: equipos_lifecycle_override_manual
+    description: "Overrides manuales auditables para lifecycle del parque actual cuando la validación operativa confirma exclusiones por venta/baja fuera de las fuentes estructuradas."
+    config:
+      schema: analytics
+      quote_columns: false
+      column_types:
+        id_equipo: text
+        estado_operativo_override: text
+        estado_equipo_override: text
+        clasificacion_operacional_override: text
+        es_activo_operativo_override: boolean
+        motivo: text
+        override_scope: text
+    columns:
+      - name: id_equipo
+        tests: [not_null, unique]
+      - name: estado_operativo_override
+      - name: estado_equipo_override
+      - name: clasificacion_operacional_override
+      - name: es_activo_operativo_override
+      - name: motivo
+      - name: override_scope
+
+  - name: dim_oem_product_carbon_reports
+    description: "Catalogo curado de reportes OEM de huella por producto o familia usado en la fase inicial de sostenibilidad."
+    config:
+      schema: analytics
+      quote_columns: false
+      column_types:
+        priority: integer
+        manufacturer: text
+        match_brand: text
+        match_model_pattern: text
+        match_model_year: text
+        device_category: text
+        report_name: text
+        report_region: text
+        report_total_kgco2e: numeric(14,2)
+        report_use_share_pct: numeric(8,4)
+        assumed_lifetime_years: numeric(8,2)
+        source_name: text
+        source_url: text
+        source_confidence: text
+        methodology: text
+        notes: text
+    columns:
+      - name: priority
+        tests: [not_null]
+      - name: report_name
+        tests: [not_null]
+
+  - name: dim_device_power_profiles
+    description: "Perfiles curados de consumo anual de energia para estimar la fase de uso por equipo."
+    config:
+      schema: analytics
+      quote_columns: false
+      column_types:
+        priority: integer
+        manufacturer: text
+        match_brand: text
+        match_model_pattern: text
+        match_model_year: text
+        device_category: text
+        annual_kwh_estimate: numeric(14,4)
+        assumed_lifetime_years: numeric(8,2)
+        source_name: text
+        source_url: text
+        source_confidence: text
+        notes: text
+    columns:
+      - name: priority
+        tests: [not_null]
+
+  - name: dim_grid_emission_factors_country_year
+    description: "Factores curados de red electrica por pais y anio de referencia para una primera estimacion de huella de uso."
+    config:
+      schema: analytics
+      quote_columns: false
+      column_types:
+        priority: integer
+        country_name: text
+        reference_year: integer
+        grid_factor_kgco2e_kwh: numeric(14,6)
+        source_name: text
+        source_url: text
+        source_confidence: text
+        notes: text
+    columns:
+      - name: country_name
+        tests: [not_null]
+      - name: grid_factor_kgco2e_kwh
+        tests: [not_null]
+
+  - name: dim_carbon_overrides_manual
+    description: "Overrides manuales opcionales para huella cuando el negocio valida un dato OEM o energetico especifico."
+    config:
+      schema: analytics
+      quote_columns: false
+      column_types:
+        id_equipo: text
+        carbon_report_total_kgco2e: numeric(14,2)
+        carbon_embodied_kgco2e: numeric(14,2)
+        carbon_use_annual_kwh: numeric(14,4)
+        carbon_use_annual_kgco2e: numeric(14,2)
+        electricity_country: text
+        grid_factor_kgco2e_kwh: numeric(14,6)
+        assumed_lifetime_years: numeric(8,2)
+        override_reason: text
+        override_source: text
+    columns:
+      - name: id_equipo
+        tests:
+          - unique:
+              config:
+                severity: warn
+
+  - name: compras_documentos_2026
+    description: "Cabecera documental de compras 2026: facturas, guías de despacho y órdenes de compra proyectadas para Planeación."
+    config:
+      schema: analytics
+      quote_columns: false
+      column_types:
+        documento_id: text
+        empresa: text
+        proveedor: text
+        tipo_documento: text
+        numero_documento: text
+        fecha_emision: date
+        fecha_vencimiento: date
+        orden_compra: text
+        total_neto: numeric(14,0)
+        iva: numeric(14,0)
+        total: numeric(14,0)
+        moneda: text
+        archivo_origen: text
+        observaciones: text
+    columns:
+      - name: documento_id
+        tests: [not_null, unique]
+      - name: tipo_documento
+        tests:
+          - accepted_values:
+              values: ['factura', 'guia_despacho', 'orden_compra']
+      - name: fecha_emision
+        tests: [not_null]
+
+  - name: compras_documentos_2026_lineas
+    description: "Detalle por línea de documentos de compra 2026, incluyendo seriales visibles en guías de despacho."
+    config:
+      schema: analytics
+      quote_columns: false
+      column_types:
+        linea_id: text
+        documento_id: text
+        marca: text
+        modelo: text
+        descripcion_original: text
+        cantidad: integer
+        precio_unitario: numeric(14,0)
+        total_linea: numeric(14,0)
+        tipo_equipo: text
+        ram: integer
+        almacenamiento: integer
+        procesador: text
+        pantalla: text
+        anio_compra: integer
+        mes_compra: integer
+        almacenamiento_tipo: text
+        sistema_operativo: text
+        serial: text
+    columns:
+      - name: linea_id
+        tests: [not_null, unique]
+      - name: documento_id
+        tests: [not_null]
+      - name: cantidad
+        tests: [not_null]

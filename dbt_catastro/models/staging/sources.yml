@@ -1,0 +1,29 @@
+version: 2
+
+sources:
+  - name: raw
+    schema: raw
+    tables:
+      - name: sync_runs
+      - name: mtr_equipos_asignados_detalle
+      - name: mtr_equipos_disponibles
+      - name: mtr_equipos_asignados
+      - name: mtr_ingresos
+      - name: mtr_salidas
+      - name: mtr_equ_por_recuperardefectuosoobs
+      - name: mtr_equ_extranjero
+      - name: mtr_iso27001
+      - name: mtr_walmart_equipos_asignadosdevu
+      - name: mtr_koandina_equipos_asignadosdevu
+      - name: mtr_celulares_disponiblesasignado
+      - name: mtr_monitores_asignadosdisponible
+      - name: mtr_equipos_reparados
+      - name: mtr_google_sheet_rows
+        loaded_at_field: inserted_at
+        freshness:
+          warn_after:
+            count: "{{ var('mtr_raw_freshness_warn_hours') | int }}"
+            period: hour
+          error_after:
+            count: "{{ var('mtr_raw_freshness_error_hours') | int }}"
+            period: hour

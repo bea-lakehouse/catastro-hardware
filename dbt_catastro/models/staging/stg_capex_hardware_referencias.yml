@@ -1,0 +1,14 @@
+version: 2
+
+models:
+  - name: stg_capex_hardware_referencias
+    description: "Referencias financieras manuales vigentes para CAPEX de hardware."
+    columns:
+      - name: modelo
+        tests: [not_null]
+      - name: proveedor
+        tests: [not_null]
+      - name: empresa
+        tests: [not_null]
+      - name: precio_unitario
+        tests: [not_null]

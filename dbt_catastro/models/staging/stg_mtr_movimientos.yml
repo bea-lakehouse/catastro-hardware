@@ -1,0 +1,49 @@
+version: 2
+
+models:
+  - name: stg_mtr_ingresos
+    description: "Staging ingresos desde MTR (asignaciones)."
+    columns:
+      - name: id_equipo
+        tests:
+          - not_null:
+              config:
+                severity: warn
+      - name: fecha_evento
+        tests: [not_null]
+      - name: tipo_evento
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['ASIGNACION', 'INGRESO', 'ASIGNACION_ACTUAL']
+
+  - name: stg_mtr_salidas
+    description: "Staging salidas desde MTR (devoluciones)."
+    columns:
+      - name: id_equipo
+        tests:
+          - not_null:
+              config:
+                severity: warn
+      - name: fecha_evento
+        tests: [not_null]
+      - name: tipo_evento
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['DEVOLUCION', 'SALIDA']
+      - name: fuente_origen
+        tests: [not_null]
+
+  - name: stg_mtr_salidas_manual
+    description: "Salidas manuales complementarias para cubrir faltantes del flujo operativo."
+    columns:
+      - name: fecha_evento
+        tests: [not_null]
+      - name: tipo_evento
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['SALIDA']
+      - name: fuente_origen
+        tests: [not_null]
