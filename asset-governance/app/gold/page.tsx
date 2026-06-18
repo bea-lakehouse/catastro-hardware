@@ -9,7 +9,7 @@ const STATUS_STYLES = {
 export const dynamic = 'force-dynamic';
 
 export default async function GoldPage() {
-  const { marts, operational, partial, apiEndpoints } = getGold();
+  const { marts, operational, partial, apiEndpoints } = await getGold();
 
   return (
     <div className="space-y-6">

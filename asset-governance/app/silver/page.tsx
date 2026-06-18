@@ -4,8 +4,8 @@ import KpiCard from '@/components/cards/KpiCard';
 export const dynamic = 'force-dynamic';
 
 export default async function SilverPage() {
-  const { rules } = getSilver();
-  const { movementCompleteness: completenessKpis } = getQuality();
+  const { rules } = await getSilver();
+  const { movementCompleteness: completenessKpis } = await getQuality();
 
   return (
     <div className="space-y-6">

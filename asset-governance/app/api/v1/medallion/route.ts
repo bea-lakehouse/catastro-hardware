@@ -3,7 +3,7 @@ import { getMedallion } from '@/services';
 
 export async function GET() {
   try {
-    const data = getMedallion();
+    const data = await getMedallion();
     return NextResponse.json({ ok: true, data }, { status: 200 });
   } catch (err) {
     console.error('[/api/v1/medallion]', err);

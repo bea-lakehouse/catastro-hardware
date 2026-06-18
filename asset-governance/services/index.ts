@@ -1,12 +1,9 @@
 /**
- * services/index.ts
+ * services/index.ts — barrel export
  *
- * Barrel export for all service modules.
- * Import services through this file to keep imports clean.
- *
- * Usage:
- *   import { getGobierno } from '@/services';
- *   import type { GobiernoPayload } from '@/services';
+ * All service functions are now async (return Promise<Payload>).
+ * Pages call them with `await` inside async Server Components.
+ * API routes call them inside async GET handlers.
  */
 
 export * from './governance.service';

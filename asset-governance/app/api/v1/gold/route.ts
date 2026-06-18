@@ -3,7 +3,7 @@ import { getGold } from '@/services';
 
 export async function GET() {
   try {
-    const data = getGold();
+    const data = await getGold();
     return NextResponse.json({ ok: true, data }, { status: 200 });
   } catch (err) {
     console.error('[/api/v1/gold]', err);

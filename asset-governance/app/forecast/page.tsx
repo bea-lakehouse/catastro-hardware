@@ -17,7 +17,7 @@ const ML_PILL_LABELS = { done:'Operativo', next:'Próximo', planned:'Planificado
 export const dynamic = 'force-dynamic';
 
 export default async function ForecastPage() {
-  const { renovation, summary, growth, mlRoadmap } = getForecast();
+  const { renovation, summary, growth, mlRoadmap } = await getForecast();
   const maxEq = Math.max(...growth.map(p => p.eq));
 
   return (

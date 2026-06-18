@@ -3,7 +3,7 @@ import { getBronze } from '@/services';
 
 export async function GET() {
   try {
-    const data = getBronze();
+    const data = await getBronze();
     return NextResponse.json({ ok: true, data }, { status: 200 });
   } catch (err) {
     console.error('[/api/v1/bronze]', err);

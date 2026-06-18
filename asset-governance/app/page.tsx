@@ -6,7 +6,7 @@ import { StrategicMessage } from '@/components/governance/GovernanceComponents';
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
-  const { summary: s, completenessKpis, maturityLevels, qualityScoreFormula } = getResumen();
+  const { summary: s, completenessKpis, maturityLevels, qualityScoreFormula } = await getResumen();
 
   return (
     <div className="space-y-6">

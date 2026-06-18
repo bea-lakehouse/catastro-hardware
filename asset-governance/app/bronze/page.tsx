@@ -10,7 +10,7 @@ const STATUS_STYLE = {
 export const dynamic = 'force-dynamic';
 
 export default async function BronzePage() {
-  const { sources, totalRecords, withWarnings, lastLoad } = getBronze();
+  const { sources, totalRecords, withWarnings, lastLoad } = await getBronze();
 
   return (
     <div className="space-y-6">

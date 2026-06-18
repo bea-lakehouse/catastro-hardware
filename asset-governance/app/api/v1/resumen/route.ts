@@ -3,7 +3,7 @@ import { getResumen } from '@/services';
 
 export async function GET() {
   try {
-    const data = getResumen();
+    const data = await getResumen();
     return NextResponse.json({ ok: true, data }, { status: 200 });
   } catch (err) {
     console.error('[/api/v1/resumen]', err);

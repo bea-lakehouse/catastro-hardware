@@ -5,6 +5,6 @@ export const dynamic = 'force-dynamic';
 
 // Server Component: fetches data, passes to Client Component for interactivity
 export default async function GobiernoPage() {
-  const data = getGobierno();
+  const data = await getGobierno();
   return <GobiernoClient data={data} />;
 }

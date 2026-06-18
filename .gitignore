@@ -60,3 +60,4 @@ env.local
 *.local
 *.BROKEN*
 asset-governance-v0/
+asset-governance-before-supabase/

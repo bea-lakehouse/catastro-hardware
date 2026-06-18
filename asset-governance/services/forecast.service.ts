@@ -1,11 +1,10 @@
 /**
- * ForecastService
- *
- * Single source of truth for renovation forecast and ML roadmap.
- * Sprint 2: replace with live gold_forecast_v2 queries.
+ * services/forecast.service.ts
+ * Feature-flag pattern.
+ * Sprint 3: replace mock with live gold_forecast_v2 queries.
  */
 
-// ─── Types ────────────────────────────────────────────────────
+// Types only — no DB queries yet (gold_forecast_v2 table not in Sprint 2 schema)
 export interface RenovationLane {
   period:  string;
   count:   number;
@@ -21,15 +20,15 @@ export interface GrowthPoint {
 }
 
 export interface MlMilestone {
-  phase:   string;
-  date:    string;
-  label:   string;
-  desc:    string;
-  status:  'done' | 'next' | 'planned' | 'future';
+  phase:  string;
+  date:   string;
+  label:  string;
+  desc:   string;
+  status: 'done' | 'next' | 'planned' | 'future';
 }
 
 export interface ForecastPayload {
-  renovation:     RenovationLane[];
+  renovation:   RenovationLane[];
   summary: {
     budget12mUSD:           number;
     projectedPark6m:        number;
@@ -38,13 +37,13 @@ export interface ForecastPayload {
     ingressPerMonth:        number;
     outgressPerMonth:       number;
   };
-  growth:         GrowthPoint[];
-  mlRoadmap:      MlMilestone[];
-  snapshotDate:   string;
+  growth:       GrowthPoint[];
+  mlRoadmap:    MlMilestone[];
+  snapshotDate: string;
 }
 
-// ─── Service method ───────────────────────────────────────────
-export function getForecast(): ForecastPayload {
+export async function getForecast(): Promise<ForecastPayload> {
+  // Sprint 3: query gold_forecast_v2, gold_renovation_plan, etc.
   return {
     renovation: [
       { period:'Renovación inmediata', count:25, cost:50920, color:'text-red-600',     bg:'bg-red-50 border-red-200',     desc:'Defectuosos + De Baja' },
@@ -67,11 +66,11 @@ export function getForecast(): ForecastPayload {
       { mes:'Abr',    eq:103 }, { mes:'May',    eq:103 }, { mes:'Jun 27', eq:104 },
     ],
     mlRoadmap: [
-      { phase:'Ahora',        date:'Jun 2026',     label:'Reglas de negocio', desc:'Score 0-100: antigüedad(30%) + estado(25%) + ciclos(20%) + CPU(15%) + RAM(10%)',                          status:'done'    },
-      { phase:'Sprint 5–7',   date:'Jul–Sep 2026', label:'Infraestructura',   desc:'Supabase/Postgres · Pipeline automatizado · API REST · 3+ snapshots reales',                             status:'next'    },
-      { phase:'Oct–Nov 2026', date:'Oct–Nov 2026', label:'Preparación ML',    desc:'6 snapshots reales + riesgo_percibido_it completo + fact_movements fechas ≥90%',                         status:'planned' },
-      { phase:'Dic 2026',     date:'Dic 2026',     label:'Asset Risk ML v1',  desc:'XGBoost + SHAP · gold_risk_ml mart · A/B vs reglas · validación temporal',                              status:'planned' },
-      { phase:'Mar 2027',     date:'Mar 2027',     label:'Forecast ML v1',    desc:'Prophet por cliente · forecast 3/6/12m · alertas de compra proactivas',                                  status:'future'  },
+      { phase:'Ahora',        date:'Jun 2026',      label:'Reglas de negocio', desc:'Score 0-100: antigüedad(30%) + estado(25%) + ciclos(20%) + CPU(15%) + RAM(10%)',                                               status:'done'    },
+      { phase:'Sprint 5–7',   date:'Jul–Sep 2026',  label:'Infraestructura',   desc:'Supabase operativo · Pipeline automatizado · API REST · 3+ snapshots reales',                                                  status:'next'    },
+      { phase:'Oct–Nov 2026', date:'Oct–Nov 2026',  label:'Preparación ML',    desc:'6 snapshots reales + riesgo_percibido_it completo + fact_movements fechas ≥90%',                                              status:'planned' },
+      { phase:'Dic 2026',     date:'Dic 2026',      label:'Asset Risk ML v1',  desc:'XGBoost + SHAP · gold_risk_ml mart · A/B vs reglas · validación temporal',                                                    status:'planned' },
+      { phase:'Mar 2027',     date:'Mar 2027',      label:'Forecast ML v1',    desc:'Prophet por cliente · forecast 3/6/12m · alertas de compra proactivas',                                                        status:'future'  },
     ],
     snapshotDate: '2026-06-17',
   };

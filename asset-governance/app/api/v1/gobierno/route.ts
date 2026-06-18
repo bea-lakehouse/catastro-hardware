@@ -3,7 +3,7 @@ import { getGobierno } from '@/services';
 
 export async function GET() {
   try {
-    const data = getGobierno();
+    const data = await getGobierno();
     return NextResponse.json({ ok: true, data }, { status: 200 });
   } catch (err) {
     console.error('[/api/v1/gobierno]', err);

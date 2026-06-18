@@ -4,7 +4,7 @@ import KpiCard from '@/components/cards/KpiCard';
 export const dynamic = 'force-dynamic';
 
 export default async function CalidadPage() {
-  const { parkQualityScore, grade, trend, components, improvements, movementCompleteness } = getQuality();
+  const { parkQualityScore, grade, trend, components, improvements, movementCompleteness } = await getQuality();
 
   return (
     <div className="space-y-6">

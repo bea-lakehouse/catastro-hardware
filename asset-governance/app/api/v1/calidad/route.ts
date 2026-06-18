@@ -3,7 +3,7 @@ import { getCalidad } from '@/services';
 
 export async function GET() {
   try {
-    const data = getCalidad();
+    const data = await getCalidad();
     return NextResponse.json({ ok: true, data }, { status: 200 });
   } catch (err) {
     console.error('[/api/v1/calidad]', err);

@@ -21,7 +21,7 @@ function LayerHeader({ color, label, subtitle }: { color: string; label: string;
 export const dynamic = 'force-dynamic';
 
 export default async function MedallionPage() {
-  const { bronze, silver, gold, pillars } = getMedallion();
+  const { bronze, silver, gold, pillars } = await getMedallion();
 
   return (
     <div className="space-y-6">
